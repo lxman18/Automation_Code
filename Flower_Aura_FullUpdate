@@ -1,0 +1,233 @@
+package Flower;
+
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.util.*;
+import java.util.regex.*;
+
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.openqa.selenium.*;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.support.ui.*;
+
+public class flower_Aura {
+
+    // Utility to extract first numeric value from a string
+    public static double extractFirstNumber(String input) {
+        try {
+            Matcher m = Pattern.compile("\\b\\d+(\\.\\d+)?\\b").matcher(input);
+            if (m.find()) {
+                return Double.parseDouble(m.group());
+            }
+        } catch (Exception ignored) {}
+        return 0;
+    }
+
+    public static void main(String[] args) throws Exception {
+        WebDriver driver = new ChromeDriver();
+        driver.manage().window().maximize();
+
+        try {
+            // Read Excel file
+            String filePath = ".\\input-data\\Flower.xlsx";
+            FileInputStream file = new FileInputStream(filePath);
+            Workbook workbook = new XSSFWorkbook(file);
+            Sheet sheet = workbook.getSheet("Sheet1");
+            int rowCount = sheet.getPhysicalNumberOfRows();
+
+            List<String> inputPid = new ArrayList<>(), inputCity = new ArrayList<>(),
+                    inputName = new ArrayList<>(), inputSize = new ArrayList<>(), urls = new ArrayList<>();
+
+            for (int i = 1; i < rowCount; i++) {
+                Row row = sheet.getRow(i);
+                if (row == null) continue;
+
+                Cell idCell = row.getCell(0);
+                String id = "NA";
+                if (idCell != null) {
+                    if (idCell.getCellType() == CellType.NUMERIC) {
+                        id = String.valueOf((long) idCell.getNumericCellValue());
+                    } else {
+                        id = idCell.toString().trim();
+                    }
+                }
+
+                String city = row.getCell(1) != null ? row.getCell(1).toString().trim() : "NA";
+                String name = row.getCell(2) != null ? row.getCell(2).toString().trim() : "NA";
+                String size = row.getCell(3) != null ? row.getCell(3).toString().trim() : "NA";
+                String url = row.getCell(4) != null ? row.getCell(4).toString().trim() : "NA";
+
+                inputPid.add(id);
+                inputCity.add(city);
+                inputName.add(name);
+                inputSize.add(size);
+                urls.add(url);
+            }
+
+            // Map of InputPid to converted quantity (e.g., 1 unit = 12 roses)
+            Map<String, Double> pidSizeMap = new HashMap<>();
+            pidSizeMap.put("549144", 12.0); 
+            pidSizeMap.put("576443", 10.0);
+            pidSizeMap.put("634355", 5.0); 
+            pidSizeMap.put("537181", 10.0); 
+            pidSizeMap.put("537176", 10.0); 
+            pidSizeMap.put("587949", 16.0); 
+            pidSizeMap.put("549143", 4.0); 
+            pidSizeMap.put("549145", 10.0); 
+            pidSizeMap.put("549139", 5.0); 
+            pidSizeMap.put("587947", 5.0); 
+            pidSizeMap.put("549142", 8.0); 
+
+            
+            // Add more mappings as needed...
+
+            // Prepare output
+            Workbook outputWorkbook = new XSSFWorkbook();
+            Sheet outputSheet = outputWorkbook.createSheet("Results");
+
+            String[] headers = {
+                "InputPid", "InputCity", "InputName", "InputSize", "ConvertedInputSize", "URL",
+                "Name", "MRP", "SP", "UOM", "ExtractedUOMQty", "Multiplier", "Availability", "Offer"
+            };
+
+            Row headerRow = outputSheet.createRow(0);
+            for (int i = 0; i < headers.length; i++) {
+                headerRow.createCell(i).setCellValue(headers[i]);
+            }
+
+            int rowIndex = 1;
+            for (int i = 0; i < urls.size(); i++) {
+                String id = inputPid.get(i);
+                String city = inputCity.get(i);
+                String name = inputName.get(i);
+                String size = inputSize.get(i);
+                String url = urls.get(i);
+
+                String prodName = "NA", mrp = "NA", sp = "NA", uom = "NA", offer1 = "NA";
+                double multiplier = 0, sizeVal = 0, uomVal = 0, convertedSize = 0;
+                String availability = "NA";
+
+                try {
+                    if (url.equalsIgnoreCase("NA") || url.isEmpty()) throw new Exception("Invalid URL");
+
+                    driver.get(url);
+                    Thread.sleep(2000); // wait for page load
+                    
+                    WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+
+                    try {
+                        WebElement pinClick = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//div[@id='user-selected-city-input']")));
+                        pinClick.click();
+
+                        WebElement pinInput = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//input[@class='selectCityPincode']")));
+                        pinInput.clear();
+                        pinInput.sendKeys("122018");
+
+                        WebElement pinSubmit = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("(//span[@class='secondLocationText'])[1]")));
+                        pinSubmit.click();
+
+                        System.out.println("----------------------------- Pincode set --------------------");
+                    } catch (Exception e) {
+                        System.out.println("Pincode update failed ");
+                    }
+
+                    // Name
+                    prodName = driver.findElement(By.xpath("//h1[@itemprop='name']")).getText();
+                    System.out.println(prodName);
+
+                    // SP
+                    WebElement spElement = driver.findElement(By.xpath("(//div[@class='priceBox_product']//span)[1]"));
+                    sp = spElement.getText().replace("₹", "").trim();
+                    System.out.println(sp);
+
+                    // MRP
+                    try {
+                        WebElement mrpElement = driver.findElement(By.xpath("//span[@class='listPrice']"));
+                        mrp = mrpElement.getText().replace("₹", "").trim();
+                    } catch (Exception e) {
+                        mrp = sp;
+                    }
+                    System.out.println(mrp);
+
+                    // UOM
+                    Thread.sleep(5000);
+                    WebElement uomElement = driver.findElement(By.xpath("//ul[@class='containsdata contains show']"));
+                    uom = uomElement.getText().trim();
+                    System.out.println(uom);
+
+                    // Use mapping to get Converted Size
+                    if (pidSizeMap.containsKey(id)) {
+                        convertedSize = pidSizeMap.get(id);
+                    } else {
+                        convertedSize = extractFirstNumber(size);
+                    }
+
+                    // Extract UOM number
+                    uomVal = extractFirstNumber(uom);
+
+                    if (uomVal != 0) {
+                        multiplier = convertedSize / uomVal;
+                        multiplier = Double.parseDouble(String.format("%.2f", multiplier));
+                    }
+                    System.out.println(multiplier);
+
+                    // Availability
+                    boolean outOfStock = driver.findElements(By.xpath("//div[@class='add-to-cart-btn']//a")).isEmpty();
+                    availability = outOfStock ? "0" : "1";
+                    System.out.println(availability);
+
+                    // Offer
+                    try {
+                        if (!sp.equals(mrp)) {
+                            WebElement offerElement = driver.findElement(By.xpath("//span[@class='percentagePrice']"));
+                            offer1 = offerElement.getText();
+                            System.out.println(offer1);
+                        }
+                    } catch (Exception e) {
+                        offer1 = "NA";
+                        System.out.println(offer1);
+                    }
+                    
+                } catch (Exception e) {
+                    System.out.println("Error for URL: " + url);
+                    System.out.println(offer1);
+                }
+
+                System.out.println("--------------------------------------------------------------------------------");
+
+                Row resultRow = outputSheet.createRow(rowIndex++);
+                resultRow.createCell(0).setCellValue(id);
+                resultRow.createCell(1).setCellValue(city);
+                resultRow.createCell(2).setCellValue(name);
+                resultRow.createCell(3).setCellValue(size);
+                resultRow.createCell(4).setCellValue(convertedSize);
+                resultRow.createCell(5).setCellValue(url);
+                resultRow.createCell(6).setCellValue(prodName);
+                resultRow.createCell(7).setCellValue(mrp);
+                resultRow.createCell(8).setCellValue(sp);
+                resultRow.createCell(9).setCellValue(uom);
+                resultRow.createCell(10).setCellValue(uomVal);
+                resultRow.createCell(11).setCellValue(multiplier);
+                resultRow.createCell(12).setCellValue(availability);
+                resultRow.createCell(13).setCellValue(offer1);
+            }
+
+            // Save file
+            String timestamp = new SimpleDateFormat("ddMMyy_HHmmss").format(new Date());
+            String outputPath = ".\\Output\\Flower_outputData_" + timestamp + ".xlsx";
+            FileOutputStream fos = new FileOutputStream(outputPath);
+            outputWorkbook.write(fos);
+            fos.close();
+
+            System.out.println("Saved: " + outputPath);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            driver.quit();
+        }
+    }
+}
