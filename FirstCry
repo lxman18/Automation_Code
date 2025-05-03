@@ -1,0 +1,224 @@
+package FirstCry;
+
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
+public class First_cry_1half {
+
+	public static void main(String[] args) throws Exception{
+		
+		ChromeOptions options = new ChromeOptions();
+		WebDriver driver = new ChromeDriver(options);
+		
+		driver.manage().window().maximize();
+		
+		
+		
+		try {
+			String filepath = ".\\input-data\\ZeptoPharma.xlsx";
+			FileInputStream file = new FileInputStream(filepath);
+			Workbook urlbook = new XSSFWorkbook();
+			Sheet urlsheet = urlbook.getSheet("Sheet2");
+			int rowcount = urlsheet.getPhysicalNumberOfRows();
+			
+			List<String> InputPid = new ArrayList<String>(), InputCity = new ArrayList<String>(),InputName = new ArrayList<String>(),
+					InputSize = new ArrayList<String>(),NewProductCode = new ArrayList<String>(),URL = new ArrayList<String>(),UOM = new ArrayList<String>(),Multiplier = new ArrayList<String>(),
+							Availability = new ArrayList<String>(),Pincode = new ArrayList<String>();
+			
+			
+			for(int i =0; i< rowcount; i++) {
+				
+				Row row = urlsheet.getRow(i);
+				if(i==0) {
+					continue;
+				}
+				
+				Cell InputPidCell = row.getCell(0);
+				Cell InputCityCell = row.getCell(1);
+				Cell InputNameCell = row.getCell(2);
+				Cell InputSizecell = row.getCell(3);
+				Cell NewProductCodeCell = row.getCell(4);
+				Cell URLCell = row.getCell(5);
+				Cell UOMCell = row.getCell(6);
+				Cell MultiplierCell = row.getCell(7);
+				Cell AvailabilityCell = row.getCell(8);
+				Cell PincodeCell = row.getCell(9);
+				
+				
+				if(URLCell!=null && URLCell.getCellType()==CellType.STRING) {
+				String url = URLCell.getStringCellValue();
+				String id = (InputPidCell!=null && InputPidCell.getCellType()==CellType.STRING) ? InputPidCell.getStringCellValue() :"";
+				String city = (InputCityCell!=null && InputCityCell.getCellType()==CellType.STRING) ? InputCityCell.getStringCellValue() :"";
+				String name = (InputNameCell!=null && InputNameCell.getCellType()==CellType.STRING) ? InputNameCell.getStringCellValue() :"";
+				String size = (InputSizecell!=null && InputSizecell.getCellType()==CellType.STRING) ? InputSizecell.getStringCellValue() :"";
+				String newProductcode = (NewProductCodeCell!=null && NewProductCodeCell.getCellType()==CellType.STRING) ? NewProductCodeCell.getStringCellValue() :"";
+				String Uom = (UOMCell!=null && UOMCell.getCellType()==CellType.STRING) ? UOMCell.getStringCellValue() :"";
+				String multiplier = (MultiplierCell!=null && MultiplierCell.getCellType()==CellType.STRING) ? MultiplierCell.getStringCellValue() :"";
+				String availability = (AvailabilityCell!=null && AvailabilityCell.getCellType()==CellType.STRING) ? AvailabilityCell.getStringCellValue() :"";
+				String Pincod = (PincodeCell!=null && PincodeCell.getCellType()==CellType.STRING) ? PincodeCell.getStringCellValue() :"";
+				
+				
+				
+				InputPid.add(id);
+				InputCity.add(city);
+				InputName.add(name);
+				InputSize.add(size);
+				NewProductCode.add(newProductcode);
+				URL.add(url);
+				UOM.add(Uom);
+				Multiplier.add(multiplier);
+				Availability.add(availability);
+				Pincode.add(Pincod);
+				
+					
+					
+				}
+			}
+			Workbook outWorkbook = new XSSFWorkbook();
+			Sheet outsheet = outWorkbook.createSheet("data Scraped");
+			
+			Row row = outsheet.createRow(0);
+			row.createCell(0).setCellValue("InputPid");
+			row.createCell(1).setCellValue("InputCity");
+			row.createCell(2).setCellValue("InputName");
+			row.createCell(3).setCellValue("InputSize");			
+			row.createCell(4).setCellValue("NewProductCode");
+			row.createCell(5).setCellValue("Url");
+			row.createCell(6).setCellValue("UOM");
+			row.createCell(7).setCellValue("Multiplier");
+			row.createCell(8).setCellValue("Availability");
+			row.createCell(9).setCellValue("Pincode");
+			
+			int headercount =1;
+			int count =1;
+			
+			for(int i =0; i<URL.size();i++) {
+				
+				String id = InputPid.get(i);
+				String City = InputCity.get(i);
+				String Name = InputName.get(i);
+				String Size = InputSize.get(i);				
+				String Newproduct = NewProductCode.get(i);
+				String Url = URL.get(i);
+				String UO = UOM.get(i);
+				String multi = Multiplier.get(i);
+				String Availabilit = Availability.get(i);
+				String Pinc = Pincode.get(i);
+				
+				
+				try {
+					if (Url.isEmpty() || Url.equalsIgnoreCase("NA")) {
+					    // Set "NA" values in all three columns
+					    Row resultRow = outsheet.createRow(headercount++);
+					    resultRow.createCell(0).setCellValue(id);
+					    resultRow.createCell(1).setCellValue(City);
+					    resultRow.createCell(2).setCellValue(Name);
+					    resultRow.createCell(3).setCellValue(Size);
+					    resultRow.createCell(4).setCellValue(Newproduct);
+					    resultRow.createCell(5).setCellValue(Url);
+					    resultRow.createCell(6).setCellValue("NA");
+					    resultRow.createCell(7).setCellValue("NA");
+					    resultRow.createCell(8).setCellValue("NA");
+					    resultRow.createCell(9).setCellValue("NA");
+					    resultRow.createCell(10).setCellValue("NA");
+					    resultRow.createCell(11).setCellValue("NA");
+					    resultRow.createCell(12).setCellValue("NA");
+					    resultRow.createCell(13).setCellValue("NA");
+					    resultRow.createCell(14).setCellValue("NA");
+					    resultRow.createCell(15).setCellValue("NA");
+					    resultRow.createCell(16).setCellValue("NA");
+					    resultRow.createCell(17).setCellValue("NA");
+					    resultRow.createCell(18).setCellValue("NA");
+					    resultRow.createCell(19).setCellValue("NA");
+					    resultRow.createCell(20).setCellValue("NA");
+					    resultRow.createCell(21).setCellValue("NA");
+					    
+					    System.out.println("Skipped processing for URL: " + Url);
+					    continue; // Skip to the next iteration
+					}
+
+					try {
+						driver.get("https://www.firstcry.com/m/login?URL=https://www.firstcry.com/cashcoupons");
+						WebElement Email = driver.findElement(By.id("lemail"));
+						Email.clear();
+						Email.sendKeys("lklaxman03@gmail.com");
+						Thread.sleep(3000);
+						WebElement continueButton = driver.findElement(By.xpath("//span[@class='J14SB_42 cl_fff']"));
+						continueButton.click();
+						
+						Thread.sleep(5000);
+						WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+						WebElement allCategory = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//a[contains(text(),'All Categories')]")));
+						allCategory.click();
+
+						WebDriverWait wait1 = new WebDriverWait(driver, Duration.ofSeconds(50));
+
+						// Click on the location selector
+						WebElement locationSet = wait.until(ExpectedConditions.elementToBeClickable(By.id("geopincode")));
+						locationSet.click();
+
+						// Enter the pincode
+						WebElement pincodeInput = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("lpincode")));
+						pincodeInput.clear();
+						pincodeInput.sendKeys("122018");
+
+						// Click the Apply button
+						WebElement applyPincode = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("(//span[@class='M16_white'])[3]")));
+						applyPincode.click();
+					} catch (InterruptedException e) {
+						
+						
+						
+						System.out.println("Pincode not Set");
+					}
+				} catch (Exception e) {
+					 System.out.println("Failed to extract data for URL: " + Url);
+				}
+
+				
+				
+			}
+			
+			
+			
+			SimpleDateFormat data = new SimpleDateFormat("dd_MM_YYYY_HH_Mm_ss");
+			String timestamp = data.format(new Date() );
+			String outpath = ".//Output//Firstcry";
+			
+			
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
+		
+		
+		
+		
+		
+		
+
+	}
+
+}
