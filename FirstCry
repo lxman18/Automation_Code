@@ -2,6 +2,7 @@ package FirstCry;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
@@ -21,9 +22,10 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.Wait;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-public class First_cry_1half {
+public class FirstCry {
 
 	public static void main(String[] args) throws Exception{
 		
@@ -35,10 +37,11 @@ public class First_cry_1half {
 		
 		
 		try {
-			String filepath = ".\\input-data\\ZeptoPharma.xlsx";
+			String filepath = ".\\InputData\\firstcrynew.xlsx";
 			FileInputStream file = new FileInputStream(filepath);
-			Workbook urlbook = new XSSFWorkbook();
-			Sheet urlsheet = urlbook.getSheet("Sheet2");
+			
+			Workbook urlbook = new XSSFWorkbook(file);
+			Sheet urlsheet = urlbook.getSheet("FirstCry1");
 			int rowcount = urlsheet.getPhysicalNumberOfRows();
 			
 			List<String> InputPid = new ArrayList<String>(), InputCity = new ArrayList<String>(),InputName = new ArrayList<String>(),
@@ -158,20 +161,41 @@ public class First_cry_1half {
 					}
 
 					try {
-						driver.get("https://www.firstcry.com/m/login?URL=https://www.firstcry.com/cashcoupons");
-						WebElement Email = driver.findElement(By.id("lemail"));
+						driver.get("https://www.firstcry.com/");
+						
+						WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+						WebElement login = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//xpath/of/login/button")));
+						
+						WebElement Email = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//input[contains(@class,'cntryMobNo J14R_42 cl_9e ip_box ip_error')]")));
 						Email.clear();
 						Email.sendKeys("lklaxman03@gmail.com");
 						Thread.sleep(3000);
 						WebElement continueButton = driver.findElement(By.xpath("//span[@class='J14SB_42 cl_fff']"));
 						continueButton.click();
 						
+						
+						
+						WebElement locationElement = driver.findElement(By.xpath("//span[contains(text(),'Select location')]"));
+						
+						
+						
+
+						locationElement.click();
+						WebElement pinElement = driver.findElement(By.xpath("//span[contains(text(),'Enter a pin')]"));
+						pinElement.click();
+						WebElement Enterpin = driver.findElement(By.xpath("//input[@id='nonlpincode']"));
+						Enterpin.click();
+						Enterpin.clear();
+						
+
+						
+						
 						Thread.sleep(5000);
-						WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+						WebDriverWait wait1 = new WebDriverWait(driver, Duration.ofSeconds(10));
 						WebElement allCategory = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//a[contains(text(),'All Categories')]")));
 						allCategory.click();
 
-						WebDriverWait wait1 = new WebDriverWait(driver, Duration.ofSeconds(50));
+						WebDriverWait wait12 = new WebDriverWait(driver, Duration.ofSeconds(50));
 
 						// Click on the location selector
 						WebElement locationSet = wait.until(ExpectedConditions.elementToBeClickable(By.id("geopincode")));
@@ -204,19 +228,23 @@ public class First_cry_1half {
 			SimpleDateFormat data = new SimpleDateFormat("dd_MM_YYYY_HH_Mm_ss");
 			String timestamp = data.format(new Date() );
 			String outpath = ".//Output//Firstcry";
+			FileOutputStream fos = new FileOutputStream(outpath);
+			outWorkbook.write(fos);
+            fos.close();
+            outWorkbook.close();
+            
+            System.out.println("Output saved to: " + outpath);
+
+
+			
+			
 			
 			
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println("Main exception: ");
+            e.printStackTrace();
 		}
-		
-		
-		
-		
-		
-		
-		
+				
 		
 
 	}
