@@ -1,0 +1,184 @@
+package Zepto_Pharma;
+
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.openqa.selenium.*;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
+public class Zepto_Health_Care {
+
+    public static void main(String[] args) throws Exception {
+
+        String inputFile = ".//input-data//Zepto_pharma_input.xlsx";  // Input Excel path
+        FileInputStream fis = new FileInputStream(inputFile);
+        XSSFWorkbook inputWorkbook = new XSSFWorkbook(fis);
+        XSSFSheet inputSheet = inputWorkbook.getSheetAt(0);
+        int urlCount = inputSheet.getLastRowNum();
+
+        // Output workbook setup
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Zepto Products");
+        String[] columns = {"URL", "Name", "MRP", "SP", "UOM", "Offer", "Available", "ProductURL"};
+        Row header = sheet.createRow(0);
+        for (int i = 0; i < columns.length; i++) {
+            header.createCell(i).setCellValue(columns[i]);
+        }
+
+        int rowCount = 1;
+
+        // Selenium setup
+        ChromeOptions options = new ChromeOptions();
+        WebDriver driver = new ChromeDriver(options);
+        driver.manage().window().maximize();
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(50));
+
+        for (int i = 0; i <= urlCount; i++) {
+            Row row = inputSheet.getRow(i);
+            if (row == null || row.getCell(0) == null) continue;
+
+            String inputUrl = row.getCell(0).getStringCellValue().trim();
+            if (inputUrl.isEmpty() || !inputUrl.startsWith("http")) {
+                System.out.println(" Skipping invalid URL at row " + (i + 1));
+                continue;
+            }
+
+            System.out.println(" Navigating to URL: " + inputUrl);
+            driver.get(inputUrl);
+            Thread.sleep(5000);
+            scrollToBottomSlowly(driver);
+            Thread.sleep(3000);
+
+            List<WebElement> products = driver.findElements(By.xpath("//a[@data-testid='product-card']"));
+            System.out.println(" Products Found: " + products.size());
+
+            for (WebElement product : products) {
+                try {
+                    String Name = "NA", Mrp1 = "NA", Sp1 = "NA", Uom1 = "NA", Offer1 = "NA";
+                    int Available = 0;
+                    String productUrl = "NA";
+
+                    try {
+                        productUrl = product.getAttribute("href");
+                    } catch (Exception e) {
+                        // Try finding the link element directly
+                        try {
+                            WebElement linkElement = product.findElement(By.xpath("."));
+                            productUrl = linkElement.getAttribute("href");
+                        } catch (Exception ignored) {                        	
+                        	productUrl="NA";
+                        	
+                       }
+                   }
+
+                    try {
+                        Name = product.findElement(By.xpath(".//h5[contains(@class,'font-subtitle')]")).getText();
+                    } catch (Exception ignored) {}
+
+                    try {
+                        Sp1 = product.findElement(By.xpath(".//h4[contains(@class,'font-heading')]")).getText().replace("₹", "").trim();
+                    } catch (Exception ignored) {}
+
+                    try {
+                        Mrp1 = product.findElement(By.xpath(".//p[contains(@class,'line-through')]")).getText().replace("₹", "").trim();
+                    } catch (Exception e) {
+                        Mrp1 = Sp1;
+                    }
+
+                    try {
+                        Uom1 = product.findElement(By.xpath(".//h5[@class='font-subtitle text-lg tracking-wider line-clamp-1 mt-1 !text-sm !font-light']")).getText();
+                    } catch (Exception ignored) {}
+
+                    try {
+                        Offer1 = product.findElement(By.xpath(".//p[contains(@class,'absolute top-0 text-center')]")).getText();
+                    } catch (Exception ignored) {}
+
+                    try {
+                        WebElement addToCart = product.findElement(By.xpath(".//span[contains(text(), 'Add to Cart')]"));
+                        if (addToCart.isDisplayed()) {
+                            Available = 1;
+                        }
+                    } catch (Exception ignored) {}
+
+                    System.out.println("Name: " + Name);
+                    System.out.println("MRP: " + Mrp1);
+                    System.out.println("SP: " + Sp1);
+                    System.out.println("UOM: " + Uom1);
+                    System.out.println("Offer: " + Offer1);
+                    System.out.println("Available: " + Available);
+                    System.out.println("Product URL: " + productUrl);
+                    System.out.println("---------------------------------------");
+
+                    Row dataRow = sheet.createRow(rowCount++);
+                    dataRow.createCell(0).setCellValue(inputUrl);
+                    dataRow.createCell(1).setCellValue(Name);
+                    dataRow.createCell(2).setCellValue(Mrp1);
+                    dataRow.createCell(3).setCellValue(Sp1);
+                    dataRow.createCell(4).setCellValue(Uom1);
+                    dataRow.createCell(5).setCellValue(Offer1);
+                    dataRow.createCell(6).setCellValue(Available);
+                    dataRow.createCell(7).setCellValue(productUrl);
+
+                } catch (Exception e) {
+                    System.out.println(" Error while processing a product.");
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        // Auto-size columns
+        for (int i = 0; i < columns.length; i++) {
+            sheet.autoSizeColumn(i);
+        }
+
+        // Save Excel
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+        String fileName = ".//Output_zepto_" + timestamp + ".xlsx";
+        FileOutputStream fileOut = new FileOutputStream(fileName);
+        workbook.write(fileOut);
+        fileOut.close();
+        workbook.close();
+        inputWorkbook.close();
+        fis.close();
+
+        System.out.println("Data saved to: " + fileName);
+        driver.quit();
+    }
+
+    public static void scrollToBottomSlowly(WebDriver driver) {
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+        long lastHeight = (long) js.executeScript("return document.body.scrollHeight");
+
+        while (true) {
+            for (int i = 0; i < lastHeight; i += 500) {
+                js.executeScript("window.scrollBy(0, 500);");
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            long newHeight = (long) js.executeScript("return document.body.scrollHeight");
+            if (newHeight == lastHeight) {
+                break;
+            }
+            lastHeight = newHeight;
+        }
+    }
+}
