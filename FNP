@@ -1,266 +1,252 @@
-package Flower;
+package FirstCry;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
-import java.util.*;
-import java.util.regex.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
-import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.openqa.selenium.*;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.support.ui.*;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.Wait;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
-public class test {
+public class FirstCry {
 
-    // Utility to extract first numeric value from a string
-    public static double extractFirstNumber(String input) {
-        try {
-            if (input == null || input.isEmpty()) return 0;
-            Matcher m = Pattern.compile("\\b\\d+(\\.\\d+)?\\b").matcher(input);
-            if (m.find()) {
-                return Double.parseDouble(m.group());
-            }
-        } catch (Exception ignored) {}
-        return 0;
-    }
+	public static void main(String[] args) throws Exception{
+		
+		ChromeOptions options = new ChromeOptions();
+		WebDriver driver = new ChromeDriver(options);
+		
+		driver.manage().window().maximize();
+		
+		
+		
+		try {
+			String filepath = ".\\InputData\\firstcrynew.xlsx";
+			FileInputStream file = new FileInputStream(filepath);
+			
+			Workbook urlbook = new XSSFWorkbook(file);
+			Sheet urlsheet = urlbook.getSheet("FirstCry1");
+			int rowcount = urlsheet.getPhysicalNumberOfRows();
+			
+			List<String> InputPid = new ArrayList<String>(), InputCity = new ArrayList<String>(),InputName = new ArrayList<String>(),
+					InputSize = new ArrayList<String>(),NewProductCode = new ArrayList<String>(),URL = new ArrayList<String>(),UOM = new ArrayList<String>(),Multiplier = new ArrayList<String>(),
+							Availability = new ArrayList<String>(),Pincode = new ArrayList<String>();
+			
+			
+			for(int i =0; i< rowcount; i++) {
+				
+				Row row = urlsheet.getRow(i);
+				if(i==0) {
+					continue;
+				}
+				
+				Cell InputPidCell = row.getCell(0);
+				Cell InputCityCell = row.getCell(1);
+				Cell InputNameCell = row.getCell(2);
+				Cell InputSizecell = row.getCell(3);
+				Cell NewProductCodeCell = row.getCell(4);
+				Cell URLCell = row.getCell(5);
+				Cell UOMCell = row.getCell(6);
+				Cell MultiplierCell = row.getCell(7);
+				Cell AvailabilityCell = row.getCell(8);
+				Cell PincodeCell = row.getCell(9);
+				
+				
+				if(URLCell!=null && URLCell.getCellType()==CellType.STRING) {
+				String url = URLCell.getStringCellValue();
+				String id = (InputPidCell!=null && InputPidCell.getCellType()==CellType.STRING) ? InputPidCell.getStringCellValue() :"";
+				String city = (InputCityCell!=null && InputCityCell.getCellType()==CellType.STRING) ? InputCityCell.getStringCellValue() :"";
+				String name = (InputNameCell!=null && InputNameCell.getCellType()==CellType.STRING) ? InputNameCell.getStringCellValue() :"";
+				String size = (InputSizecell!=null && InputSizecell.getCellType()==CellType.STRING) ? InputSizecell.getStringCellValue() :"";
+				String newProductcode = (NewProductCodeCell!=null && NewProductCodeCell.getCellType()==CellType.STRING) ? NewProductCodeCell.getStringCellValue() :"";
+				String Uom = (UOMCell!=null && UOMCell.getCellType()==CellType.STRING) ? UOMCell.getStringCellValue() :"";
+				String multiplier = (MultiplierCell!=null && MultiplierCell.getCellType()==CellType.STRING) ? MultiplierCell.getStringCellValue() :"";
+				String availability = (AvailabilityCell!=null && AvailabilityCell.getCellType()==CellType.STRING) ? AvailabilityCell.getStringCellValue() :"";
+				String Pincod = (PincodeCell!=null && PincodeCell.getCellType()==CellType.STRING) ? PincodeCell.getStringCellValue() :"";
+				
+				
+				
+				InputPid.add(id);
+				InputCity.add(city);
+				InputName.add(name);
+				InputSize.add(size);
+				NewProductCode.add(newProductcode);
+				URL.add(url);
+				UOM.add(Uom);
+				Multiplier.add(multiplier);
+				Availability.add(availability);
+				Pincode.add(Pincod);
+				
+					
+					
+				}
+			}
+			Workbook outWorkbook = new XSSFWorkbook();
+			Sheet outsheet = outWorkbook.createSheet("data Scraped");
+			
+			Row row = outsheet.createRow(0);
+			row.createCell(0).setCellValue("InputPid");
+			row.createCell(1).setCellValue("InputCity");
+			row.createCell(2).setCellValue("InputName");
+			row.createCell(3).setCellValue("InputSize");			
+			row.createCell(4).setCellValue("NewProductCode");
+			row.createCell(5).setCellValue("Url");
+			row.createCell(6).setCellValue("UOM");
+			row.createCell(7).setCellValue("Multiplier");
+			row.createCell(8).setCellValue("Availability");
+			row.createCell(9).setCellValue("Pincode");
+			
+			int headercount =1;
+			int count =1;
+			
+			for(int i =0; i<URL.size();i++) {
+				
+				String id = InputPid.get(i);
+				String City = InputCity.get(i);
+				String Name = InputName.get(i);
+				String Size = InputSize.get(i);				
+				String Newproduct = NewProductCode.get(i);
+				String Url = URL.get(i);
+				String UO = UOM.get(i);
+				String multi = Multiplier.get(i);
+				String Availabilit = Availability.get(i);
+				String Pinc = Pincode.get(i);
+				
+				
+				try {
+					if (Url.isEmpty() || Url.equalsIgnoreCase("NA")) {
+					    // Set "NA" values in all three columns
+					    Row resultRow = outsheet.createRow(headercount++);
+					    resultRow.createCell(0).setCellValue(id);
+					    resultRow.createCell(1).setCellValue(City);
+					    resultRow.createCell(2).setCellValue(Name);
+					    resultRow.createCell(3).setCellValue(Size);
+					    resultRow.createCell(4).setCellValue(Newproduct);
+					    resultRow.createCell(5).setCellValue(Url);
+					    resultRow.createCell(6).setCellValue("NA");
+					    resultRow.createCell(7).setCellValue("NA");
+					    resultRow.createCell(8).setCellValue("NA");
+					    resultRow.createCell(9).setCellValue("NA");
+					    resultRow.createCell(10).setCellValue("NA");
+					    resultRow.createCell(11).setCellValue("NA");
+					    resultRow.createCell(12).setCellValue("NA");
+					    resultRow.createCell(13).setCellValue("NA");
+					    resultRow.createCell(14).setCellValue("NA");
+					    resultRow.createCell(15).setCellValue("NA");
+					    resultRow.createCell(16).setCellValue("NA");
+					    resultRow.createCell(17).setCellValue("NA");
+					    resultRow.createCell(18).setCellValue("NA");
+					    resultRow.createCell(19).setCellValue("NA");
+					    resultRow.createCell(20).setCellValue("NA");
+					    resultRow.createCell(21).setCellValue("NA");
+					    
+					    System.out.println("Skipped processing for URL: " + Url);
+					    continue; // Skip to the next iteration
+					}
 
-    public static void main(String[] args) throws Exception {
-        WebDriver driver = new ChromeDriver();
-        driver.manage().window().maximize();
-        driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(30));
+					try {
+						driver.get("https://www.firstcry.com/");
+						
+						WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+						WebElement login = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//xpath/of/login/button")));
+						
+						WebElement Email = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//input[contains(@class,'cntryMobNo J14R_42 cl_9e ip_box ip_error')]")));
+						Email.clear();
+						Email.sendKeys("lklaxman03@gmail.com");
+						Thread.sleep(3000);
+						WebElement continueButton = driver.findElement(By.xpath("//span[@class='J14SB_42 cl_fff']"));
+						continueButton.click();
+						
+						
+						
+						WebElement locationElement = driver.findElement(By.xpath("//span[contains(text(),'Select location')]"));
+						
+						
+						
 
-        try {
-            // Read Excel file
-            String filePath = ".\\input-data\\Flower.xlsx";
-            FileInputStream file = new FileInputStream(filePath);
-            Workbook workbook = new XSSFWorkbook(file);
-            Sheet sheet = workbook.getSheet("Sheet2"); // Explicitly use Sheet1
-            int rowCount = sheet.getPhysicalNumberOfRows();
+						locationElement.click();
+						WebElement pinElement = driver.findElement(By.xpath("//span[contains(text(),'Enter a pin')]"));
+						pinElement.click();
+						WebElement Enterpin = driver.findElement(By.xpath("//input[@id='nonlpincode']"));
+						Enterpin.click();
+						Enterpin.clear();
+						
 
-            List<String> inputPid = new ArrayList<>(), inputCity = new ArrayList<>(),
-                    inputName = new ArrayList<>(), inputSize = new ArrayList<>(),
-                    urls = new ArrayList<>();
+						
+						
+						Thread.sleep(5000);
+						WebDriverWait wait1 = new WebDriverWait(driver, Duration.ofSeconds(10));
+						WebElement allCategory = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//a[contains(text(),'All Categories')]")));
+						allCategory.click();
 
-            // Read input data, filter for FNP products
-            for (int i = 1; i < rowCount; i++) {
-                Row row = sheet.getRow(i);
-                if (row == null) continue;
+						WebDriverWait wait12 = new WebDriverWait(driver, Duration.ofSeconds(50));
 
-                String pid = row.getCell(0) != null ? row.getCell(0).toString().trim() : "NA";
-                String city = row.getCell(1) != null ? row.getCell(1).toString().trim() : "NA";
-                String name = row.getCell(2) != null ? row.getCell(2).toString().trim() : "NA";
-                String size = row.getCell(3) != null ? row.getCell(3).toString().trim() : "NA";
-                String url = row.getCell(4) != null ? row.getCell(4).toString().trim() : "NA";
+						// Click on the location selector
+						WebElement locationSet = wait.until(ExpectedConditions.elementToBeClickable(By.id("geopincode")));
+						locationSet.click();
 
-                // Only process FNP products
-                if (name.toLowerCase().startsWith("fnp")) {
-                    inputPid.add(pid);
-                    inputCity.add(city);
-                    inputName.add(name);
-                    inputSize.add(size);
-                    urls.add(url);
+						// Enter the pincode
+						WebElement pincodeInput = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("lpincode")));
+						pincodeInput.clear();
+						pincodeInput.sendKeys("122018");
 
-                    //System.out.println("Row " + i + ": PID=" + pid + " | City=" + city + " | Name=" + name + " | Size=" + size + " | URL=" + url);
-                    System.out.println(pid);
-                    System.out.println(city);
-                    System.out.println(name);
-                    System.out.println(size);
-                    System.out.println(url);
-                }
-            }
+						// Click the Apply button
+						WebElement applyPincode = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("(//span[@class='M16_white'])[3]")));
+						applyPincode.click();
+					} catch (InterruptedException e) {
+						
+						
+						
+						System.out.println("Pincode not Set");
+					}
+				} catch (Exception e) {
+					 System.out.println("Failed to extract data for URL: " + Url);
+				}
 
-            file.close();
-
-            if (inputPid.isEmpty()) {
-                System.out.println("No FNP products found in the input file.");
-                return;
-            }
-
-            // Prepare output
-            Workbook outputWorkbook = new XSSFWorkbook();
-            Sheet outputSheet = outputWorkbook.createSheet("Results");
-
-            String[] headers = {
-                "InputPid", "InputCity", "InputName", "InputSize", "ConvertedInputSize", "URL",
-                "Name", "MRP", "SP", "UOM", "ExtractedUOMQty", "Multiplier", "Availability", "Offer"
-            };
-
-            Row headerRow = outputSheet.createRow(0);
-            for (int i = 0; i < headers.length; i++) {
-                headerRow.createCell(i).setCellValue(headers[i]);
-            }
-
-            int rowIndex = 1;
-            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(15));
-
-            for (int i = 0; i < urls.size(); i++) {
-                String pid = inputPid.get(i);
-                String city = inputCity.get(i);
-                String name = inputName.get(i);
-                String size = inputSize.get(i);
-                String url = urls.get(i);
-
-                String prodName = "NA", mrp = "NA", sp = "NA", uom = "NA", offer = "NA";
-                double multiplier = 0, convertedSize = 0, uomVal = 0;
-                String availability = "NA";
-
-                try {
-                    if (url.equalsIgnoreCase("NA") || url.isEmpty()) {
-                        System.out.println("Skipping invalid URL for PID: " + pid);
-                        throw new Exception("Invalid URL");
-                    }
-
-                    driver.get(url);
-                    Thread.sleep(3000); // Increased wait for page load
-
-                    // Set pincode for FNP
-                    try {
-                        WebElement pinInput = wait.until(ExpectedConditions.visibilityOfElementLocated(
-                            By.xpath("//input[@placeholder='Enter Receiver’s pincode, location, area']")));
-                        pinInput.clear();
-                        pinInput.sendKeys("122018");
-                        WebElement pinSubmit = wait.until(ExpectedConditions.elementToBeClickable(
-                            By.xpath("//span[@class='w-[calc(100%-24px)] px-8']")));
-                        pinSubmit.click();
-                        Thread.sleep(2000); // Wait for pincode update
-                        System.out.println("FNP: Pincode set to 122018 for PID: " + pid);
-                    } catch (Exception e) {
-                        System.out.println("FNP: Pincode update failed for PID");
-                    }
-
-                    // Scrape FNP data
-                    // Name
-                    try {
-                        prodName = wait.until(ExpectedConditions.visibilityOfElementLocated(
-                            By.xpath("//h1[@id='productName']"))).getText().trim();
-                    } catch (Exception e) {
-                        System.out.println("FNP: Name not found for PID: " );
-                    }
-
-                    // SP
-                    try {
-                        WebElement spElement = wait.until(ExpectedConditions.visibilityOfElementLocated(
-                            By.xpath("//p[@id='odometer']")));
-                        sp = spElement.getText().replace("₹", "").replace(",", "").trim();
-                    } catch (Exception e) {
-                        System.out.println("FNP: SP not found for PID: ");
-                    }
-
-                    // MRP
-                    try {
-                        WebElement mrpElement = wait.until(ExpectedConditions.visibilityOfElementLocated(
-                            By.xpath("//p[@class='text-14 md:text-20 font-400 text-grey-500']//del")));
-                        mrp = mrpElement.getText().replace("₹", "").replace(",", "").trim();
-                    } catch (Exception e) {
-                        mrp = sp;
-                        System.out.println("FNP: MRP not found, using SP for PID: ");
-                    }
-
-                    // UOM
-                    try {
-                        WebElement uomElement = wait.until(ExpectedConditions.visibilityOfElementLocated(
-                            By.xpath("//div[@class='product-description']")));
-                        uom = uomElement.getText().trim();
-                    } catch (Exception e) {
-                        System.out.println("FNP: UOM not found for PID: " );
-                    }
-
-                    // Availability
-                    try {
-                        availability = driver.findElements(By.xpath("//button[contains(text(),'Add to Cart')]")).isEmpty() ? "0" : "1";
-                    } catch (Exception e) {
-                        System.out.println("FNP: Availability check failed for PID: ");
-                    }
-
-                    // Offer
-                    try {
-                        if (!sp.equals(mrp)) {
-                            WebElement offerElement = wait.until(ExpectedConditions.visibilityOfElementLocated(
-                                By.xpath("//p[contains(@class,'text-green')]")));
-                            offer = offerElement.getText().trim();
-                        }
-                    } catch (Exception e) {
-                        offer = "NA";
-                        System.out.println("FNP: Offer not found for PID: " );
-                    }
-
-                    // Extract Converted Size
-                    convertedSize = extractFirstNumber(size);
-                    if (convertedSize == 0 && size.toLowerCase().contains("unit")) {
-                        convertedSize = 1; // Default to 1 for "1 unit"
-                    } else if (size.toLowerCase().contains("pack")) {
-                        convertedSize = extractFirstNumber(size.replaceAll("[^0-9]", ""));
-                    }
-
-                    // Extract UOM number
-                    uomVal = extractFirstNumber(uom);
-                    if (uomVal == 0 && !uom.equals("NA")) {
-                        uomVal = 1; // Default to 1 if no number found but UOM exists
-                    }
-
-                    // Calculate Multiplier
-                    if (uomVal != 0) {
-                        multiplier = convertedSize / uomVal;
-                        multiplier = Double.parseDouble(String.format("%.2f", multiplier));
-                    }
-
-                    
-                    System.out.println(pid);
-                    System.out.println(prodName);
-                    System.out.println(mrp);
-                    System.out.println(sp);
-                    System.out.println(uom);
-                    System.out.println(convertedSize);
-                    System.out.println(multiplier);
-                    System.out.println(availability);
-                    System.out.println(offer);
-                    
-                    
-                    
-                    System.out.println("--------------------------------------------------------------------------------");
-
-                } catch (Exception e) {
-                    System.out.println("Error processing URL: " + url );
-                    System.out.println("Exception: ");
-                    System.out.println("--------------------------------------------------------------------------------");
-                }
-
-                // Write to output
-                Row resultRow = outputSheet.createRow(rowIndex++);
-                resultRow.createCell(0).setCellValue(pid);
-                resultRow.createCell(1).setCellValue(city);
-                resultRow.createCell(2).setCellValue(name);
-                resultRow.createCell(3).setCellValue(size);
-                resultRow.createCell(4).setCellValue(convertedSize);
-                resultRow.createCell(5).setCellValue(url);
-                resultRow.createCell(6).setCellValue(prodName);
-                resultRow.createCell(7).setCellValue(mrp);
-                resultRow.createCell(8).setCellValue(sp);
-                resultRow.createCell(9).setCellValue(uom);
-                resultRow.createCell(10).setCellValue(uomVal);
-                resultRow.createCell(11).setCellValue(multiplier);
-                resultRow.createCell(12).setCellValue(availability);
-                resultRow.createCell(13).setCellValue(offer);
-            }
-
-            // Save output file
-            String timestamp = new SimpleDateFormat("ddMMyy_HHmmss").format(new Date());
-            String outputPath = ".\\Output\\FNP_outputData_" + timestamp + ".xlsx";
-            FileOutputStream fos = new FileOutputStream(outputPath);
-            outputWorkbook.write(fos);
+				
+				
+			}
+			
+			
+			
+			SimpleDateFormat data = new SimpleDateFormat("dd_MM_YYYY_HH_Mm_ss");
+			String timestamp = data.format(new Date() );
+			String outpath = ".//Output//Firstcry";
+			FileOutputStream fos = new FileOutputStream(outpath);
+			outWorkbook.write(fos);
             fos.close();
-            outputWorkbook.close();
+            outWorkbook.close();
+            
+            System.out.println("Output saved to: " + outpath);
 
-            System.out.println("Output saved to: " + outputPath);
 
-        } catch (Exception e) {
-            System.out.println("Main exception: ");
+			
+			
+			
+			
+		} catch (FileNotFoundException e) {
+			System.out.println("Main exception: ");
             e.printStackTrace();
-        } finally {
-            driver.quit();
-        }
-    }
+		}
+				
+		
+
+	}
+
 }
